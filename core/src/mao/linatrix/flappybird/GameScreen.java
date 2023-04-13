@@ -11,6 +11,7 @@ public class GameScreen extends ScreenAdapter {
 
     private final float BIRD_SIZE_PIXEL = 128;
     private static final float MOVE_TIME = 0.1F;
+    private final float EARTH_GRAVITY = 2.F;
     private SpriteBatch batch;
     private Texture background;
     private Texture[][] birds;
@@ -21,12 +22,17 @@ public class GameScreen extends ScreenAdapter {
 
     private int birdColor = 2;
 
-    private float birdPosY = 0;
+    private float birdPosY = 0.F;
+    private float birdPosX = 0.F;
+    private float birdFreeFallVelocity = 0.F;
+
+    private boolean gameState = false;
 
     @Override
     public void show() {
         batch = new SpriteBatch();
         background = new Texture("background-day.png");
+
         birds = new Texture[3][3];
         birds[0][0] = new Texture("redbird-downflap.png");
         birds[0][1] = new Texture("redbird-midflap.png");
@@ -37,13 +43,16 @@ public class GameScreen extends ScreenAdapter {
         birds[2][0] = new Texture("yellowbird-downflap.png");
         birds[2][1] = new Texture("yellowbird-midflap.png");
         birds[2][2] = new Texture("yellowbird-upflap.png");
+
+        birdPosY = (Gdx.graphics.getHeight() - BIRD_SIZE_PIXEL) / 2.F;
+        birdPosX = (Gdx.graphics.getWidth() - BIRD_SIZE_PIXEL) / 2.F;
     }
 
     @Override
     public void render(float delta) {
 
         if (Gdx.input.justTouched()) {
-            Gdx.app.log("Touched", "Yep");
+            gameState = true;
         }
 
         timer -= delta;
@@ -53,15 +62,32 @@ public class GameScreen extends ScreenAdapter {
             if (birdFlapState >= 2 || birdFlapState <= 0) {
                 invNum *= -1;
             }
+
             birdFlapState += invNum;
         }
 
-        clearScreen();
+        if (gameState != false) {
+            if (Gdx.input.isTouched()) {
+                birdFreeFallVelocity = -20;
+            }
 
+            if (birdPosY > 0.F  || birdFreeFallVelocity < 0.F) {
+                birdFreeFallVelocity += EARTH_GRAVITY;
+                birdPosY -= birdFreeFallVelocity;
+            }
+
+        } else {
+            if (Gdx.input.justTouched()) {
+                gameState = true;
+            }
+        }
+
+        // clearScreen();
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        batch.draw(birds[birdColor][birdFlapState], (Gdx.graphics.getWidth() - BIRD_SIZE_PIXEL) / 2F, (Gdx.graphics.getHeight() - BIRD_SIZE_PIXEL) / 2F, BIRD_SIZE_PIXEL, BIRD_SIZE_PIXEL);
+        batch.draw(birds[birdColor][birdFlapState], birdPosX, birdPosY, BIRD_SIZE_PIXEL, BIRD_SIZE_PIXEL);
         batch.end();
+
     }
 
     private void clearScreen() {
